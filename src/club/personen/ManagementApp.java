@@ -2,39 +2,54 @@ package club.personen;
 
 import club.personen.controller.CSVController;
 import club.personen.model.Besucher;
+import club.personen.view.ConsoleView;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.util.List;
+
 import java.time.LocalDate;
 import java.util.List;
 
 public class ManagementApp {
     public static void main(String[] args) {
         CSVController controller = new CSVController();
+        ConsoleView view = new ConsoleView();
 
         try {
-            // 1. Daten einlesen
+            // Daten initial laden
             List<Besucher> besucherListe = controller.leseBesucher();
             List<Mitarbeiter> mitarbeiterListe = controller.leseMitarbeiter();
 
-            // 2. Ausgabe (View-Part)
-            System.out.println("Aktuelle Besucher:");
-            besucherListe.forEach(System.out::println);
+            boolean läuft = true;
+            while (läuft) {
+                int wahl = view.zeigeMenue();
 
-            System.out.println("\nAktuelle Mitarbeiter:");
-            mitarbeiterListe.forEach(System.out::println);
-
-            // 3. Daten manipulieren (z.B. neuen Mitarbeiter hinzufügen)
-            mitarbeiterListe.add(new Mitarbeiter("Mustermann", "Max", LocalDate.of(1990, 1, 1), 4500.0));
-
-            // 4. Daten speichern
-            controller.schreibeBesucher(besucherListe);
-            controller.schreibeMitarbeiter(mitarbeiterListe);
-            System.out.println("\nDaten wurden erfolgreich in die CSV-Dateien geschrieben.");
-
-        } catch (IOException e) {
-            System.err.println("Dateifehler: " + e.getMessage());
+                switch (wahl) {
+                    case 1 -> view.zeigeBesucher(besucherListe);
+                    case 2 -> view.zeigeMitarbeiter(mitarbeiterListe);
+                    case 3 -> {
+                        String[] d = view.abfrageBesucher();
+                        besucherListe.add(new Besucher(d[0], d[1], d[2]));
+                        view.meldung("Besucher vorläufig hinzugefügt.");
+                    }
+                    case 4 -> {
+                        String[] d = view.abfrageMitarbeiter();
+                        mitarbeiterListe.add(new Mitarbeiter(d[0], d[1],
+                                LocalDate.parse(d[2]), Double.parseDouble(d[3])));
+                        view.meldung("Mitarbeiter vorläufig hinzugefügt.");
+                    }
+                    case 5 -> {
+                        controller.schreibeBesucher(besucherListe);
+                        controller.schreibeMitarbeiter(mitarbeiterListe);
+                        view.meldung("Daten gespeichert. Auf Wiedersehen!");
+                        läuft = false;
+                    }
+                    default -> view.meldung("Ungültige Auswahl!");
+                }
+            }
         } catch (Exception e) {
-            System.err.println("Fehler: " + e.getMessage());
+            view.meldung("Ein Fehler ist aufgetreten: " + e.getMessage());
         }
     }
 }
